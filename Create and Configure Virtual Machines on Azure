@@ -1,0 +1,292 @@
+>> Create a Windows Virtual Machine in the Azure Portal
+   https://app.pluralsight.com/labs/play/d9d1a00d-861d-4bb8-a55d-192887d94c62/task/1
+
+Often used as a bridge for modernizing on-premises workloads to Microsoft Azure, virtual machines are an important piece of any organization's cloud strategy. This lab will walk you through deploying a Windows Server 2019 virtual machine in Microsoft Azure. This VM will act as a web server for your organization. You'll deploy Azure Bastion for secure browser-based access to your virtual machine. Then you'll implement common network configuration steps, and resize your virtual machine for performance improvement. You will finish with implementing Azure Disk Encryption using Azure Key Vault to secure your virtual machine's disks. When completed, you will have deployed and configured a secure web server.
+
+In this challenge, you will deploy a Windows Server 2019 Datacenter edition virtual machine that will become a web server in Microsoft Azure.
+
+
+1. Click Open Azure portal to access the lab environment, then use the provided credentials to log in.
+
+
+2.Use the search bar at the top of the page to navigate to the Virtual machines service.
+
+
+3.At the Virtual machines page, click the + Create button, then choose Azure virtual machine.
+
+
+4.In the Create a virtual machine window, enter the following information under the Basics tab:
+
+Resource Group: Click Create new, enter pluralsight-resource-group, then click OK.
+
+Virtual machine name:  vm-lab-win001
+
+Region: Choose (US) East US from the drop-down menu 
+
+Image: Choose Windows Server 2019 Datacenter - Gen2 from the drop-down menu
+
+Size: Click See all sizes, in the Search by VM size... field enter DS1_v2, choose DS1_v2, then click Select.
+
+Username:  azurelabadmin
+
+Password: L234FOmdwer#2
+
+Confirm password:  L234FOmdwer#2
+
+Public inbound ports: Choose None.
+
+5.Click Next: Disks >, then Next: Networking >.
+
+6.On the Networking tab under the Virtual network drop-down menu, click the Create new link.
+
+7.At the Create virtual network page, change the Name to vnet-lab-001.
+
+8.In the Address Space section, make sure the listed Address range is set to 10.0.0.0/16.
+
+9.Under Subnets, delete the given default subnet, then add the following:
+
+ Subnet name:  snet-lab-001 
+
+Address range:  10.0.0.0/24 
+
+Click OK. 
+
+9.Back at the Networking tab, under Public IP, click Create new.
+
+In the Create public IP address pane, enter the following:
+
+Name: vm-lab-win001-ip (Ensure this is already chosen for you.)
+
+SKU: Standard
+
+Click OK.
+
+For Public inbound ports, choose None.
+
+Leave the rest of the defaults, and click Review + create.
+
+In the Review + create tab, wait for the Validation passed message, then click Create to begin the build out of the virtual machine. 
+
+Note: This process may take a few minutes. As you are waiting for the VM to be built out, you will see all of the other resources being deployed with it including a network security group, public IP, and other resources used by the VM.
+
+When your deployment is complete, click on Go to resource. This will take you to the vm-lab-win001 Overview.
+
+Review the Properties tab and verify the information–such as a Computer name of vm-lab-win001, and a Size of Standard DS1 v2–matches the values in the tasks above. You may need to click Refresh to get up-to-date information on the Properties tab.
+
+Congratulations! You have deployed your first virtual machine running Windows Server 2019 Datacenter. Creating VMs through the Azure Portal is a quick process as long as you have all of the information you need for size, type, and networking.
+
+
+
+***Configure Virtual Machine Access with Azure Bastion
+Opening public Internet ports for Remote Desktop Protocol (RDP) and SSH to Microsoft Azure virtual machines can lead to serious security issues. To mitigate these issues and still allow administrators to manage their servers in Microsoft Azure, Azure Bastion can be deployed into your virtual networks for a secure connection to virtual machines. Azure Bastion is launched from the Azure Portal giving administrators access to their virtual machines through a web browser. No Remote Desktop client or SSH client needs to be installed locally.
+
+In this challenge, you need to deploy a secure administrative solution for your web server, vm-lab-win001. Azure Bastion will be deployed for this. First, you will create a subnet for Azure Bastion as it requires its own subnet. Next, you'll complete the Azure Bastion deployment. Finally, you will configure a custom web server using PowerShell on vm-lab-win001 using Azure Bastion.
+
+On the vm-lab-win001 Overview page, click Connect and choose Bastion from the dropdown.
+
+Click Deploy Bastion to automatically configure the Azure Bastion connection.
+
+Once Azure Bastion has been validated and deployed, enter the following credentials to access the virtual machine, then click Connect:
+
+Username:  azurelabadmin
+
+Password:  L234FOmdwer#2
+
+Note:
+
+Depending on your browser configuration, you may receive a pop-up blocker notification so you will need to allow pop-ups for the Azure Bastion window to launch.
+
+Depending on your browser configuration, you may need to click Allow on a message box that allows the Azure Bastion to See text and images copied to the clipboard or something similar.
+
+Since this is the first time logging in to the Windows Server VM, it will take a few minutes for the initial configuration.
+
+Once logged in to vm-lab-win001, at the right in the Networks panel click No, and close the Server Manager message box.
+
+Click on the Windows menu icon in the lower left corner, and under Windows Server click on the Windows PowerShell tile.
+
+In the PowerShell console, run the following commands to will install the web server role, and create a default web page: 
+
+Add-WindowsFeature Web-Server
+
+Add-Content -Path "C:\inetpub\wwwroot\Default.htm" -Value $($env:computername)
+
+Note: If you're using an operating system other than windows, make sure to press cntrl + v (not cmd + v) to paste. 
+
+In the PowerShell console, enter explorer.exe http://localhost and then close the Internet Explorer 11 message boxes that pop up. If needed, click on the localhost browser tab.
+
+This will launch Internet Explorer and display the custom web page with the name of your virtual machine, vm-lab-win001. Leave the Bastion tab open for use in later challenges.
+
+Congratulations! You've deployed Azure Bastion successfully and used it to configured a custom web server on vm-lab-win001. This will allow you to securely access your virtual machine through a web browser in the Azure portal without making Remote Desktop Connection protocol available on the public Internet.
+
+
+Configure Virtual Machine Networking
+Virtual machines and virtual networking in Azure are a bit different than their on-premises counterparts. One example is how DNS servers for the installed operating system are applied. For an on-premises VM, you would add the DNS servers in the Windows OS. In Azure, this is done in the Azure portal and the settings are passed into the VM. The same with IP addresses and other configurations.
+
+In this lab, you will configure common virtual networking settings on a virtual machine. First, you will add custom DNS servers for use by the host operating system. Then, you will give your virtual machine a custom DNS name that will be used to resolve the VM by name in Azure. Last, you will configure the network security group for your VM to allow traffic on port 80 to the virtual machine.
+
+Back in the Azure portal, use the search bar at the top of the page to navigate to the Virtual machines service.
+
+Click vm-lab-win001 to go to vm-lab-win001 Overview.
+
+On the left side under Settings, click Networking.
+
+Click the link next to Network Interface.
+
+Note: The link will have a name beginning with vm-lab-win001 followed by three digits. This was auto-created during the virtual machine creation.
+
+From the left side menu, select DNS servers.
+
+Under DNS servers, select Custom, and then enter 8.8.8.8. 
+
+This is the Google Public DNS server. Normally, Azure-provided DNS servers would be used by the client operating system, but you can use this feature when you want to specify a specific set of DNS servers for name resolution.
+
+Click Save, and wait for the update to complete.
+
+Note: This will take less than a minute, and will add the configuration and restart the virtual machine.
+
+Close vm-lab-win001... | DNS servers by clicking the X in the upper right-corner, then toward the upper-left click Overview.
+
+Lower down the page (and in the Properties tab), under Networking and next to DNS name, click Configure.
+
+For DNS name label, enter vm-lab-win001- followed by a string of a few random characters, then click Save.
+
+Note: This will create an A record, and allow for public name resolution. DNS Names need to be unique within each Azure Region. You can have two virtual machines called vm-lab-win001 in your subscription; however, they cannot be assigned the same DNS Name if they are in the same region.
+
+Close vm-lab-win001-ip | Configuration page by clicking the X in the upper-right corner.
+
+Note: The DNS name will now be vm-lab-win001-<random-suffix>.eastus.cloudapp.azure.com. If Configure is still displayed, click Refresh until the DNS displays.
+
+On the left click Networking, then click Add inbound port rule.
+
+This will allow you to create a security rule allowing traffic inbound over port 80.
+
+In Add inbound security rule, enter the following and then click Add:
+
+Destination port ranges: 80
+
+Protocol: TCP
+
+Name:  nsg-rule-lab-tcp-80
+
+(Leave the rest as their default values.)
+
+When the rule has been created, return to the vm-lab-win001 Overview page, and copy the DNS name.
+
+Open another web browser tab, and paste in the DNS name
+
+Note: It will be similar to this url, http://vm-lab-win001-<random-suffix>.eastus.cloudapp.azure.com/, and may take a few minutes to load.
+
+The custom web server page for your VM, displaying vm-lab-win001, will be shown.
+
+Congratulations! You have configured the networking for a virtual machine by adding a custom DNS Server and custom DNS Name. And through the use of inbound port rules in a network security group, you configured public access to your web server using a custom DNS name.
+
+
+Resize a VM in the Portal
+One of the advantages to running virtual machines in Microsoft Azure is the flexibility to add additional resources after they have been deployed to improve performance. Adding additional data disks and changing the virtual machine size are just two of the items you can modify. Along with adding resources, virtual machines can be moved to a different node within the Azure infrastructure
+
+In this Challenge, you are experiencing performance issues with a web server, vm-lab-win001. To improve, you will add an additional data disk to your virtual machine that will be used for future storage instead of using the current OS drive. Next, you will resize the the vm-lab-win001 virtual machine to increase the compute resources it has available. Last, you will redeploy the virtual machine to a different node in Azure.
+
+In the Azure Portal's top search bar, type in and click on Virtual machines. Then click vm-lab-win001.
+
+On the left under Settings, click Disks, then under Data disks click + Create and attach a new disk.
+
+In the new row that appears, enter the following information, then click Save:
+
+Disk name: vm-lab-win001-disk02
+
+Storage type: Standard SSD
+
+Size: 128
+
+(Leave the other fields as their default values.)
+
+This creates the new data disk, and updates the virtual machine's disk configuration.
+
+Once the configuration has been updated, switch back to the browser tab with the Bastion connection from earlier. 
+
+In the Azure Bastion tab, click the Windows icon in the lower left, then click Server Manager. 
+
+In Server Manager, click  File and Storage Services and then click Disks.
+
+This navigates to the unformatted disk added previously to the virtual machine.
+
+Right-click disk number 2, and on the context menu click Initialize. In the Initialize Disk message box, click Yes 
+
+Right-click disk number 2 again, then select  New Volume....
+
+In the New Volume Wizard, click Next on each window (five in total), accepting the default selections, and on the Confirm selections window click Create.
+
+Once the volume has been created, click Close. 
+
+Note: You can click Volumes to see the list of disk volumes. The volume you created is displayed as the F: volume, with a File System Label of New Volume
+
+Switch back to the browser tab with the Azure Portal.
+
+Go back to the vm-lab-win001 Overview page, on the left click Size, then choose D2s_v3.
+
+Note: Scroll across the columns to review all of the size increases and the monthly cost. Sizes and costs of virtual machines can change over time, so it is good to review the available sizes and costs on a regular basis
+
+Click Resize to complete the resizing process.
+
+When resizing is complete, go back to the vm-lab-win001 Overview page.
+
+On the left, toward the bottom of the navigation menu, under Support + troubleshooting, click the Redeploy + reapply. Then click the Redeploy button.
+
+This will redeploy vm-lab-win001 to another node in Azure. It should take one or two minutes to complete.
+
+Go back to the vm-lab-win001 Overview page.
+
+Click Refresh if needed periodically until redeployment completes, indicated by a Status of Running. (The status of the virtual machine will change as the VM is updated and started.) 
+
+Congratulations! You have increased the storage capacity and compute capacity of your virtual machine. And you have moved your virtual machine to a different Azure node, which is a good troubleshooting step when you are experiencing connectivity issues.
+
+
+Encrypt a Windows VM with Azure Encryption
+While all VM disks in Azure will have a base-level of encryption at rest, Azure Disk Encryption helps protect your organization's data using keys stored in Azure Key Vault, a cloud-based central management tool for keys and other secrets.
+
+In this challenge, the new data drive on your web server needs formatting, and you need to deploy Azure Encryption to vm-lab-win001. You'll complete this by connecting to vm-lab-win001 using Azure Bastion, and formatting the drive. Then you will set up Azure Key Vault, and apply Azure Encryption to vm-lab-win001.
+
+Navigate back to the Overview page of vm-lab-win001.
+
+On the left click Disks, then click Additional settings.
+
+Under Disks to encrypt, choose OS and data disks.
+
+Beneath the dropdown for the Key Vault setting, click Create new.
+
+On the Create key vault page, enter the following information on the Basics tab, then click Next: Access policy:
+
+Key vault name: Enter kv-lab-win001- followed by your initials (For example, kv-lab-win001-mb)
+
+Days to retain deleted vaults: 7
+
+(Leave the other fields with their default values.)
+
+At the Access policy tab, select Azure Disk Encryption for volume encryption, then click Next: Networking. 
+
+Note: This will allow the use of Key Vault secrets by Azure Disk Encryption.
+
+Click Next: Tags.
+
+Click Review + Create, then after waiting a bit click Create.
+
+Note: Wait for the key vault to be created and deployed; after about a minute, once done, you will be at Select key from Azure Key Vault.
+
+Under Key, click Create new.
+
+In Create a key, enter a Name of kv-key-lab-win001, and click Create.
+
+For Version, choose the only available option.
+
+On Disk settings, click Save.
+
+Note: This will update the disk encryption settings on vm-lab-win001, and will take a few minutes while both of the VM's disks are encrypted with Azure Disk Encryption. Once complete, you can for both OS disk and Data disks, check that the Encryption columns have values of SSE with PMK & ADE. This verifies the disks are now encrypted with Azure Disk Encryption.
+
+Once updated, click Overview to go back to vm-lab-win001 Overview.
+
+Toward the bottom right, under Disk, ensure that Azure disk encryption is Enabled. (You may need to click Refresh a few times.)
+
+Congratulations! You have encrypted a Windows Server 2019 virtual machine using Azure Key Vault and Azure Disk Encryption. Now that you have completed all of the challenges, you have successfully deployed and configured a virtual machine in Microsoft Azure.
+
+
+
